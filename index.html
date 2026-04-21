@@ -3,129 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TS Tišnov - Monitor Sledování</title>
+    <title>TS Tišnov - Smart Dispečink</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial Black', sans-serif; }
-        :root { --ts-blue: #0056a3; --ts-orange: #ff8800; --dark: #1e272e; }
-        
-        body { background: var(--dark); color: white; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 1000px; background: #fff; height: 100vh; display: flex; flex-direction: column; color: #333; }
+        :root {
+            --ts-blue: #0061ff;
+            --ts-orange: #ff8800;
+            --bg: #f4f7fa;
+            --white: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: #1e272e; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
 
         /* HEADER */
-        .top-bar { background: var(--ts-blue); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 5px solid var(--ts-orange); }
-        .mode-selector { display: flex; gap: 10px; }
-        .m-btn { padding: 10px 20px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; }
-        .active-m { background: var(--ts-orange); color: white; }
-
-        /* MAPA SIMULACE */
-        .map-area { flex-grow: 1; background: #dfe6e9; position: relative; overflow: hidden; border-bottom: 2px solid #ccc; }
-        .map-bg { position: absolute; width: 200%; height: 200%; background-image: 
-            linear-gradient(#ccc 2px, transparent 2px), linear-gradient(90deg, #ccc 2px, transparent 2px);
-            background-size: 100px 100px; transform: rotate(-15deg); top: -50%; left: -50%; }
-        
-        /* VOZIDLO NA MAPĚ */
-        .vehicle { 
-            position: absolute; width: 60px; height: 60px; 
-            background: var(--ts-orange); border-radius: 15px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: 0 0 20px rgba(0,0,0,0.4); transition: 0.5s linear; z-index: 10;
+        .app-header { 
+            padding: 20px; 
+            background: var(--white); 
+            border-bottom: 1px solid #eee; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+            z-index: 1000;
         }
-        .vehicle::after { content: ''; position: absolute; bottom: -10px; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 10px solid var(--ts-orange); }
-        .v-label { font-size: 0.7rem; color: #000; background: rgba(255,255,255,0.8); padding: 2px 5px; border-radius: 5px; margin-top: 5px; font-weight: 900; }
+        .app-header h1 { font-size: 1.1rem; font-weight: 800; color: var(--ts-blue); }
 
-        /* INFO PANEL */
-        .info-panel { padding: 20px; background: #fff; box-shadow: 0 -10px 20px rgba(0,0,0,0.1); }
-        .v-card { display: flex; align-items: center; gap: 20px; background: #f0f2f5; padding: 20px; border-radius: 20px; border-left: 10px solid var(--ts-orange); }
-        .v-status { flex-grow: 1; }
-        .v-status h3 { font-size: 1.5rem; color: var(--ts-blue); }
-        .live-tag { background: #d63031; color: white; padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; animation: blink 1s infinite; }
+        /* VIEW SYSTEM */
+        .view { display: none; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
+        .view.active { display: flex; }
 
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        /* HUB */
+        .hub-content { padding: 20px; }
+        .welcome-card { background: var(--ts-blue); color: white; padding: 25px; border-radius: 25px; margin-bottom: 20px; }
+        
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .card { 
+            background: white; padding: 20px; border-radius: 22px; 
+            text-align: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            transition: 0.2s; border: 1px solid transparent;
+        }
+        .card:active { transform: scale(0.95); border-color: var(--ts-blue); }
+        .card i { font-size: 2rem; display: block; margin-bottom: 10px; }
+        .card h3 { font-size: 0.9rem; font-weight: 700; }
 
-        /* ULICE TIŠNOVA (Simulace) */
-        .street-name { position: absolute; font-size: 1.5rem; font-weight: 900; color: #999; text-transform: uppercase; }
+        /* MAPA */
+        #map { flex-grow: 1; width: 100%; z-index: 1; }
+        
+        .back-bar { padding: 15px; background: white; border-top: 1px solid #eee; z-index: 1000; }
+        .btn-back { width: 100%; padding: 15px; background: #f1f3f5; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; }
+
+        /* POPISKY NA MAPĚ */
+        .truck-label {
+            background: var(--ts-orange);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            border: 2px solid white;
+            white-space: nowrap;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="top-bar">
-        <div>
-            <h1>TS LIVE MONITORING</h1>
-            <small>TIŠNOV A OKOLÍ</small>
-        </div>
-        <div class="mode-selector">
-            <button id="btn-svoz" class="m-btn active-m" onclick="setMode('svoz')">Svoz</button>
-            <button id="btn-zimni" class="m-btn" onclick="setMode('zimni')">Zimní</button>
-        </div>
-    </div>
-
-    <div class="map-area">
-        <div class="map-bg"></div>
-        <div class="street-name" style="top: 20%; left: 30%;">Nám. Míru</div>
-        <div class="street-name" style="top: 60%; left: 10%;">Brněnská</div>
-        <div class="street-name" style="top: 40%; left: 60%;">Wagnerova</div>
-
-        <div id="vuz" class="vehicle" style="top: 50%; left: 50%;">
-            <span style="font-size: 1.5rem;" id="v-icon">🗑️</span>
-            <div class="v-label" id="v-spz">7B2 4410</div>
-        </div>
-    </div>
-
-    <div class="info-panel">
-        <div class="v-card">
-            <div class="v-status">
-                <span class="live-tag">● LIVE GPS</span>
-                <h3 id="v-name">KUKA VOZ - RAJÓN 1</h3>
-                <p id="v-loc">Aktuálně: <b>ulice Mlýnská</b></p>
-                <p>Rychlost: <b id="v-speed">12 km/h</b></p>
+<div class="app-container">
+    
+    <div id="view-hub" class="view active">
+        <div class="app-header"><h1>TS Tišnov - Portál</h1></div>
+        <div class="hub-content">
+            <div class="welcome-card">
+                <p style="opacity: 0.8; font-size: 0.9rem;">Úterý 21. dubna</p>
+                <h2 style="font-size: 1.5rem; margin-top: 5px;">Dnes svoz papíru</h2>
             </div>
-            <div style="text-align: right;">
-                <p style="font-size: 0.8rem;">Vytížení:</p>
-                <progress id="v-load" value="65" max="100" style="width: 100px; accent-color: var(--ts-orange);"></progress>
+            <div class="menu-grid">
+                <div class="card" onclick="openMap()"><i>🚚</i><h3>Sledovat vozy</h3></div>
+                <div class="card" onclick="showView('view-sd')"><i>🏢</i><h3>Sběrný dvůr</h3></div>
+                <div class="card"><i>♻️</i><h3>Třídění</h3></div>
+                <div class="card"><i>⚠️</i><h3>Závady</h3></div>
             </div>
         </div>
     </div>
+
+    <div id="view-map" class="view">
+        <div class="app-header"><h1>Živý monitor (Real-time)</h1></div>
+        <div id="map"></div>
+        <div class="back-bar">
+            <button class="btn-back" onclick="showView('view-hub')">Zpět do menu</button>
+        </div>
+    </div>
+
+    <div id="view-sd" class="view">
+        <div class="app-header"><h1>Sběrný dvůr Tišnov</h1></div>
+        <div style="padding: 20px;">
+            <div style="background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px;">
+                <p><b>Adresa:</b> Wagnerova 1543</p>
+                <p><b>Telefon:</b> 549 410 331</p>
+                <hr style="margin: 15px 0; opacity: 0.1;">
+                <p style="color: var(--ts-orange); font-weight: 800;">Dnes otevřeno: 13:00 - 17:00</p>
+            </div>
+            <button class="btn-back" onclick="showView('view-hub')">Zpět do menu</button>
+        </div>
+    </div>
+
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-    let mode = 'svoz';
-    const vuz = document.getElementById('vuz');
-    
-    // Simulace pohybu
-    function moveVehicle() {
-        const x = 20 + Math.random() * 60;
-        const y = 20 + Math.random() * 60;
-        vuz.style.left = x + '%';
-        vuz.style.top = y + '%';
-        
-        document.getElementById('v-speed').innerText = Math.floor(5 + Math.random() * 25) + ' km/h';
+    let map;
+    let truckMarker;
+
+    function showView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
     }
 
-    setInterval(moveVehicle, 3000);
+    function openMap() {
+        showView('view-map');
+        
+        if (!map) {
+            // Střed Tišnova
+            map = L.map('map').setView([49.349, 16.425], 15);
 
-    function setMode(m) {
-        mode = m;
-        const btnS = document.getElementById('btn-svoz');
-        const btnZ = document.getElementById('btn-zimni');
-        const icon = document.getElementById('v-icon');
-        const vName = document.getElementById('v-name');
-        const vuzDiv = document.getElementById('vuz');
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
 
-        if(m === 'svoz') {
-            btnS.classList.add('active-m');
-            btnZ.classList.remove('active-m');
-            icon.innerText = '🗑️';
-            vName.innerText = 'KUKA VOZ - RAJÓN 1';
-            vuzDiv.style.background = 'var(--ts-orange)';
-        } else {
-            btnZ.classList.add('active-m');
-            btnS.classList.remove('active-m');
-            icon.innerText = '🚜';
-            vName.innerText = 'SYPAČ / RADLICE - SEVER';
-            vuzDiv.style.background = '#d63031'; // Červená pro zimní pohotovost
+            const truckIcon = L.divIcon({
+                className: 'truck-div',
+                html: "<div style='font-size: 30px;'>🚛</div>",
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+
+            truckMarker = L.marker([49.3488, 16.4285], {icon: truckIcon}).addTo(map);
+            truckMarker.bindTooltip("TS-01: ul. Brněnská", {
+                permanent: true, 
+                direction: 'top', 
+                className: 'truck-label'
+            }).openTooltip();
+            
+            startPopelarskaLogika();
         }
     }
+
+    // Definice trasy se "zastávkami" u popelnic
+    const trasa = [
+        { pos: [49.3488, 16.4285], status: "ul. Brněnská - jízda", delay: 3000 },
+        { pos: [49.3490, 16.4270], status: "ul. Brněnská - SVOZ", delay: 8000 }, // Zastávka
+        { pos: [49.3495, 16.4250], status: "Nám. Míru - jízda", delay: 3000 },
+        { pos: [49.3510, 16.4230], status: "ul. Mlýnská - SVOZ", delay: 10000 }, // Dlouhé nakládání
+        { pos: [49.3530, 16.4320], status: "Wagnerova - Sběrný dvůr", delay: 5000 }
+    ];
+    
+    let index = 0;
+    function startPopelarskaLogika() {
+        function krok() {
+            const bod = trasa[index];
+            
+            // Plynulý přesun na mapě
+            truckMarker.setLatLng(bod.pos);
+            truckMarker.setTooltipContent(`<b>TS-01</b><br>${bod.status}`);
+            map.panTo(bod.pos);
+
+            index = (index + 1) % trasa.length;
+            
+            // Naplánuje další pohyb podle toho, jak dlouho trvá "vysypání"
+            setTimeout(krok, bod.delay);
+        }
+        krok();
+    }
 </script>
+
 </body>
 </html>
