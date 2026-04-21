@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TS Tišnov - Informace pro občany</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial Black', sans-serif; -webkit-tap-highlight-color: transparent; }
+        :root { --ts-blue: #0056a3; --ts-orange: #ff8800; --white: #ffffff; --grey: #f4f4f4; }
+        
+        body { background: #d1d8e0; color: #1a1a1a; min-height: 100vh; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 800px; background: white; display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* HEADER */
+        .header { background: var(--ts-blue); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--ts-orange); }
+        .header h1 { font-size: 1.8rem; text-transform: uppercase; }
+
+        /* HLAVNÍ KARTA SVOZU */
+        .main-card { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+        
+        .info-box { 
+            background: var(--grey); border: 4px solid var(--ts-blue); border-radius: 25px; 
+            padding: 25px; text-align: center; margin-bottom: 20px; 
+        }
+
+        /* POPELNICE */
+        .bin-frame { 
+            width: 160px; height: 210px; margin: 0 auto 20px; border-radius: 10px 10px 40px 40px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3); position: relative;
+        }
+        .bin-label { color: white; font-size: 1.2rem; text-align: center; line-height: 1.2; }
+        
+        .date-display { font-size: 3rem; color: var(--ts-blue); display: block; margin-top: 10px; }
+
+        /* CO TAM PATŘÍ / NEPATŘÍ */
+        .content-guide { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; text-align: left;
+        }
+        .guide-box { padding: 15px; border-radius: 15px; font-size: 0.9rem; }
+        .yes { background: #e8f5e9; border-left: 8px solid #2e7d32; color: #1b5e20; }
+        .no { background: #ffebee; border-left: 8px solid #c62828; color: #b71c1c; }
+        .guide-box h4 { margin-bottom: 5px; font-size: 1rem; text-transform: uppercase; }
+
+        /* TLAČÍTKA DRUHŮ ODPADU */
+        .selector-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: auto; padding-bottom: 20px; }
+        .sel-btn { 
+            padding: 20px 10px; border-radius: 15px; border: 4px solid #ddd; 
+            background: white; font-weight: 900; cursor: pointer; font-size: 1.1rem; text-transform: uppercase;
+            transition: 0.2s;
+        }
+        .sel-btn.active { border-color: var(--ts-blue); background: #e3f2fd; transform: scale(1.02); }
+
+        .footer { background: var(--ts-blue); color: white; padding: 15px; text-align: center; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>SVOZ ODPADU TIŠNOV</h1>
+        <p>Informace pro občany</p>
+    </div>
+
+    <div class="main-card">
+        <div class="info-box">
+            <div id="big-bin" class="bin-frame" style="background:#000;">
+                <div class="bin-label" id="bin-name">KOMUNÁLNÍ<br>ODPAD</div>
+            </div>
+            <p style="font-weight:900; color:#555;">NEJBLIŽŠÍ TERMÍN SVOZU:</p>
+            <b class="date-display" id="svoz-date">ÚTERÝ 21. 4.</b>
+        </div>
+
+        <div id="guide-section">
+            <div class="content-guide">
+                <div class="guide-box yes">
+                    <h4>ANO</h4>
+                    <p id="list-yes">Zbytky jídla (ne tekuté), popel, použité pleny, smetky, znečištěný papír.</p>
+                </div>
+                <div class="guide-box no">
+                    <h4>NE</h4>
+                    <p id="list-no">Plasty, papír, sklo, nebezpečný odpad, stavební suť, horký popel!</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="height: 30px;"></div>
+
+        <div class="selector-grid">
+            <button class="sel-btn active" onclick="changeWaste('Komunál', '#000', 'ÚTERÝ 21. 4.', 'Zbytky jídla, popel, pleny, smetky, znečištěný papír.', 'Plasty, papír, sklo, baterie, barvy, suť.', this)">KOMUNÁL</button>
+            <button class="sel-btn" onclick="changeWaste('Papír', '#0056a3', 'STŘEDA 22. 4.', 'Časopisy, noviny, krabice, letáky, papírové obaly.', 'Mokrý/mastný papír, pleny, nápojové kartony (tetrapack).', this)">PAPÍR</button>
+            <button class="sel-btn" onclick="changeWaste('Plast', '#ffcc00', 'ČTVRTEK 23. 4.', 'PET lahve, kelímky, fólie, obaly od kosmetiky, plechovky.', 'Linoleum, novodur, guma, obaly od olejů a chemikálií.', this)">PLAST</button>
+            <button class="sel-btn" onclick="changeWaste('Bioodpad', '#4e342e', 'PÁTEK 24. 4.', 'Tráva, listí, plevel, zbytky ovoce a zeleniny, větve.', 'Maso, kosti, oleje, exkrementy zvířat, popel.', this)">BIOODPAD</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        TS Tišnov | Ulice Wagnerova 1543 | Tel: 549 410 331
+    </div>
+</div>
+
+<script>
+    function changeWaste(name, color, date, yes, no, btn) {
+        // Aktualizace popelnice
+        document.getElementById('big-bin').style.background = color;
+        document.getElementById('bin-name').innerHTML = name.toUpperCase() + "<br>ODPAD";
+        document.getElementById('bin-name').style.color = (name === 'Plast') ? 'black' : 'white';
+        
+        // Aktualizace data
+        document.getElementById('svoz-date').innerText = date;
+
+        // Aktualizace textu co tam patří
+        document.getElementById('list-yes').innerText = yes;
+        document.getElementById('list-no').innerText = no;
+
+        // Tlačítka
+        document.querySelectorAll('.sel-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+</script>
+</body>
+</html>
